@@ -1,0 +1,24 @@
+# --- Secrets: never commit ---
+# Real (filled-in) credential files. The *.example files next to them are
+# templates with fake values and are committed.
+avicontroller-credentials.json
+cloudflare.ini
+tests/integration/integration-credentials.json
+*credentials*.json
+!tests/integration/integration-credentials.json.example
+# Let's Encrypt account keys and other private keys.
+*.key
+*.pem
+
+# --- Python / tooling ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+dist/
+build/
+*.egg-info/
+.vscode/

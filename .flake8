@@ -1,0 +1,6 @@
+[flake8]
+# Match Black: line length 79, and ignore the checks Black's style disagrees
+# with (https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html).
+max-line-length = 79
+extend-ignore = E203, E701, E704
+exclude = .git, __pycache__, .venv, .pytest_cache

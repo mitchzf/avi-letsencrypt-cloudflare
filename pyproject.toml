@@ -1,0 +1,72 @@
+[project]
+name = "avi-letsencrypt-cloudflare"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Mitchell Zubarev-Foxworth",email = "mitchell.zubarev-foxworth@broadcom.com"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "avisdk (>=31.2.1)"
+]
+
+[tool.poetry]
+packages = [{include = "avi_letsencrypt_cloudflare", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "black (>=26.10.1,<27.0.0)",
+    "pytest (>=9.2.0,<10.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "pylint (>=4.1.3,<5.0.0)",
+    "bandit (>=1.9.4,<2.0.0)",
+    "flake8 (>=7.5.0,<8.0.0)",
+    "pyright (>=1.1.414,<2.0.0)"
+]
+
+[tool.black]
+line-length = 79
+# The controlscript runs on the Avi Controller's Python, not the >=3.14
+# used for local development. Without this, Black infers py314 from
+# requires-python and emits 3.14-only syntax (e.g. unparenthesized
+# multi-exception `except A, B:`), which is a SyntaxError on the Controller.
+target-version = ["py38"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = [
+    "--cov=letsencrypt_mgmt_profile_with_cloudflare_dns",
+    "--cov-branch",
+    "--cov-report=term-missing",
+    "--cov-fail-under=100",
+]
+markers = [
+    "integration: runs against a real Avi Controller (needs AVI_INTEGRATION=1, see tests/integration)",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.pylint.main]
+# Match Black and flake8.
+max-line-length = 79
+# A controlscript must be a single file, so it cannot be split up.
+max-module-lines = 1200
+
+[tool.pyright]
+include = ["letsencrypt_mgmt_profile_with_cloudflare_dns.py", "tests"]
+# Check the controlscript against the oldest Python it may run on (the Avi
+# Controller's), not the >=3.14 used for local development.
+pythonVersion = "3.8"
+typeCheckingMode = "standard"
+
+[tool.bandit]
+# The tests are not deployed; asserts are how pytest works.
+exclude_dirs = ["tests"]
