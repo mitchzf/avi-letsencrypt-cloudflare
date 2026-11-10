@@ -6,35 +6,38 @@
 #
 # Description -
 #     This is a python script used for automatically requesting and renewing
-#     certificates from and via Let's Encrypt using DNS-01 Challenge.
-#     To complete dns-01 challenge, a dns txt record needs to be added under
+#     certificates from Let's Encrypt using a DNS-01 Challenge.
+#     To complete DNS-01 challenge, a DNS txt record needs to be added under
 #     the domain name for which certificate has to be issued.
 #     There are two functions provided,
 #     add_dns_text_record(key_digest_64, txt_record_name, kwargs) and
 #     remove_dns_text_record(key_digest_64, txt_record_name, kwargs), to add
-#     and remove dns txt record with name txt_record_name and value
+#     and remove DNS txt record with name txt_record_name and value
 #     key_digest_64 respectively.
 #     All configuration information required by both the above functions can
 #     be provided as sensitive parameter to the script.
-#     This version adds and removes the dns txt record in a Cloudflare hosted
+#     This version adds and removes the DNS txt record in a Cloudflare hosted
 #     zone using the Cloudflare v4 API
 #     (https://developers.cloudflare.com/api/resources/dns/).
 # Setup -
-#     1. This content needs to be imported in the Avi Controller in the
-#        settings menu at <<Templates - Security - Certificate Management>>.
-#     2. Create at least the following script param:
+#     1. Import this script into the Avi Controller as a ControlScript at
+#        <<Templates - Scripts - ControlScripts>>.
+#     2. Create a Certificate Management Profile at
+#        <<Templates - Security - Certificate Management>> and select the
+#        ControlScript created in step 1 as its Control Script.
+#     3. In the profile, create at least the following script param:
 #        cloudflare_api_token (sensitive).
 #        The script does not use the Avi Controller API, so no Avi
 #        credentials are needed.
-#     3. Go to <<Templates - Security - SSL/TLS Certificates>>, click on
+#     4. Go to <<Templates - Security - SSL/TLS Certificates>>, click on
 #        <<Create>> and then <<Application Certificate>>.
-#     4. Specify a suitable name to identify this certificate in Avi
+#     5. Specify a suitable name to identify this certificate in Avi
 #        Controller. (Like sub.domain.tld RSA or sub.domain2.tld ECDSA)
-#     5. Change <<Type>> to <<CSR>>
-#     6. Set <<Common Name>> to the domain to which the certificate should be
-#        issued to and select the "Certificate Management" as previously
-#        created.
-#     7. Save and wait a few seconds for the certificate to be requested and
+#     6. Change <<Type>> to <<CSR>>
+#     7. Set <<Common Name>> to the domain to which the certificate should be
+#        issued to and select the Certificate Management Profile created in
+#        step 2.
+#     8. Save and wait a few seconds for the certificate to be requested and
 #        imported.
 #
 # Note -
@@ -45,7 +48,7 @@
 #        an RSA 1024 bit or ECDSA SECP521R1 key (which Avi can create)
 #        before contacting Let's Encrypt.
 #     2. No Virtual Service is needed: the domains are validated with
-#        dns-01 challenges in Cloudflare only. The CN and SANs of the CSR
+#        DNS-01 challenges in Cloudflare only. The CN and SANs of the CSR
 #        are used as they are; a domain that is not in a Cloudflare zone
 #        the token can edit fails at the Cloudflare API calls.
 #
@@ -432,18 +435,18 @@ def add_dns_text_record(key_digest_64, txt_record_name, kwargs):
                 method="POST",
                 payload=payload,
             )
-            print(f"Added dns txt record {record_name} (id {record['id']})")
+            print(f"Added DNS txt record {record_name} (id {record['id']})")
         except CloudflareApiError as e:
             # e.g. left over from an earlier run
             if CLOUDFLARE_IDENTICAL_RECORD not in e.error_codes:
                 raise
             print(
-                f"Identical dns txt record {record_name} already exists, "
+                f"Identical DNS txt record {record_name} already exists, "
                 "reusing it"
             )
     except Exception as e:
         raise LetsEncryptError(
-            f"Error adding dns txt record {record_name}: {e}"
+            f"Error adding DNS txt record {record_name}: {e}"
         ) from e
 
     # Cloudflare has no change-status API like Route 53's INSYNC; changes
@@ -451,12 +454,12 @@ def add_dns_text_record(key_digest_64, txt_record_name, kwargs):
     # Wait before asking the CA to validate.
     wait = _dns_propagation_wait(kwargs)
     if wait > 0:
-        print(f"Waiting {wait} seconds for dns propagation...")
+        print(f"Waiting {wait} seconds for DNS propagation...")
         time.sleep(wait)
 
 
 def remove_dns_text_record(key_digest_64, txt_record_name, kwargs):
-    """Remove the dns txt record(s) named txt_record_name with value
+    """Remove the DNS txt record(s) named txt_record_name with value
     key_digest_64. Errors are printed, not raised."""
     record_name = txt_record_name.rstrip(".")
     try:
@@ -466,7 +469,7 @@ def remove_dns_text_record(key_digest_64, txt_record_name, kwargs):
         )
         if not records:
             print(
-                f"No dns txt record {record_name} with the challenge value "
+                f"No DNS txt record {record_name} with the challenge value "
                 "found, nothing to delete"
             )
         for record in records:
@@ -475,11 +478,11 @@ def remove_dns_text_record(key_digest_64, txt_record_name, kwargs):
                 kwargs,
                 method="DELETE",
             )
-            print(f"Deleted dns txt record {record_name} (id {record['id']})")
+            print(f"Deleted DNS txt record {record_name} (id {record['id']})")
     # Do not raise: this runs in a finally block and must not mask the
     # original error.
     except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"Error deleting dns txt record {record_name}: {e}")
+        print(f"Error deleting DNS txt record {record_name}: {e}")
 
 
 # --------------------------------------------------------------------------
@@ -689,7 +692,7 @@ class AcmeClient:
 
 
 def _complete_authorization(acme, auth_url, kwargs):
-    """Complete the dns-01 challenge of one ACME authorization."""
+    """Complete the DNS-01 challenge of one ACME authorization."""
     debug = _is_true(kwargs.get("debug"))
     if debug:
         print(f"DEBUG: Authorization URL is: {auth_url}")
@@ -704,7 +707,7 @@ def _complete_authorization(acme, auth_url, kwargs):
         None,
     )
     if challenge is None:
-        raise LetsEncryptError(f"No dns-01 challenge offered for {domain}")
+        raise LetsEncryptError(f"No DNS-01 challenge offered for {domain}")
     token = re.sub(r"[^A-Za-z0-9_\-]", "_", challenge["token"])
     keydigest64 = _b64(
         hashlib.sha256(f"{token}.{acme.thumbprint}".encode("utf8")).digest()

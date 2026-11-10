@@ -285,7 +285,7 @@ class TestCertificateRequest:
 
     def test_no_dns01_challenge(self, network, acme, kwargs, csr):
         acme.offer_dns01 = False
-        with pytest.raises(S.LetsEncryptError, match="No dns-01 challenge"):
+        with pytest.raises(S.LetsEncryptError, match="No DNS-01 challenge"):
             S.certificate_request(csr, "www.example.com", kwargs)
 
     def test_unsupported_key_fails_before_any_request(

@@ -169,7 +169,7 @@ class TestAddRecord:
         assert "ACME DNS-01 challenge" in record["comment"]
         assert isolate.sleeps == [30]
         out = capsys.readouterr().out
-        assert f"Added dns txt record {NAME} (id rec-1)" in out
+        assert f"Added DNS txt record {NAME} (id rec-1)" in out
         assert "Waiting 30 seconds" in out
 
     def test_no_wait(self, cf_kwargs, isolate, capsys):
@@ -219,7 +219,7 @@ class TestRemoveRecord:
         S.remove_dns_text_record("digest", NAME + ".", cf_kwargs)
         assert list(cloudflare.records) == [keep]
         out = capsys.readouterr().out
-        assert "Deleted dns txt record" in out and "(id rec-2)" in out
+        assert "Deleted DNS txt record" in out and "(id rec-2)" in out
         assert "(id rec-3)" in out
 
     def test_nothing_to_delete(self, cf_kwargs, capsys):
@@ -238,4 +238,4 @@ class TestRemoveRecord:
         )
         S.remove_dns_text_record("digest", NAME, cf_kwargs)
         assert len(cloudflare.records) == 1
-        assert "Error deleting dns txt record" in capsys.readouterr().out
+        assert "Error deleting DNS txt record" in capsys.readouterr().out
